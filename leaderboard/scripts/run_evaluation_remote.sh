@@ -1,6 +1,6 @@
 #!/bin/bash
 # Must set CARLA_ROOT
-export CARLA_ROOT=${CARLA_ROOT:-YOUR_CARLA_PATH}
+export CARLA_ROOT=${CARLA_ROOT:-/workspace/carla}
 export CARLA_SERVER=${CARLA_ROOT}/CarlaUE4.sh
 export PYTHONPATH=$PYTHONPATH:${CARLA_ROOT}/PythonAPI
 export PYTHONPATH=$PYTHONPATH:${CARLA_ROOT}/PythonAPI/carla
@@ -12,6 +12,7 @@ export SCENARIO_RUNNER_ROOT=scenario_runner
 
 export LEADERBOARD_ROOT=leaderboard
 export CHALLENGE_TRACK_CODENAME=SENSORS
+export CARLA_HOST=${CARLA_HOST:-10.88.42.202}
 export PORT=$1
 export TM_PORT=$2
 export DEBUG_CHALLENGE=0
@@ -19,7 +20,7 @@ export REPETITIONS=1 # multiple evaluation runs
 export RESUME=True
 export IS_BENCH2DRIVE=$3
 export PLANNER_TYPE=$9
-export GPU_RANK=${10:-0}
+export GPU_RANK=${10}
 export EXTERNAL_CARLA=${EXTERNAL_CARLA:-False}
 
 # TCP evaluation
@@ -28,11 +29,6 @@ export TEAM_AGENT=$5
 export TEAM_CONFIG=$6
 export CHECKPOINT_ENDPOINT=$7
 export SAVE_PATH=$8
-
-EXTERNAL_CARLA_FLAG=""
-if [ "${EXTERNAL_CARLA}" = "True" ] || [ "${EXTERNAL_CARLA}" = "true" ] || [ "${EXTERNAL_CARLA}" = "1" ]; then
-    EXTERNAL_CARLA_FLAG="--external-carla"
-fi
 
 CUDA_VISIBLE_DEVICES=${GPU_RANK} python ${LEADERBOARD_ROOT}/leaderboard/leaderboard_evaluator.py \
 --routes=${ROUTES} \
@@ -44,7 +40,8 @@ CUDA_VISIBLE_DEVICES=${GPU_RANK} python ${LEADERBOARD_ROOT}/leaderboard/leaderbo
 --debug=${DEBUG_CHALLENGE} \
 --record=${RECORD_PATH} \
 --resume=${RESUME} \
+--host=${CARLA_HOST} \
 --port=${PORT} \
 --traffic-manager-port=${TM_PORT} \
 --gpu-rank=${GPU_RANK} \
-${EXTERNAL_CARLA_FLAG}
+--external-carla=${EXTERNAL_CARLA}
