@@ -239,8 +239,12 @@ def read_from_json(filepath, metric_dir=None):
         data = json.load(f)
     all_data = []
     driving_efficiency = []
+    skipped = 0
     for record in data["_checkpoint"]["records"]:
         filepath = os.path.join(metric_dir, record["save_name"], 'metric_info.json')
+        if not os.path.exists(filepath):
+            skipped += 1
+            continue
         temp_dict = {}
         temp_dict["acceleration"] = []
         temp_dict["angular_velocity"] = []
@@ -271,16 +275,23 @@ def read_from_json(filepath, metric_dir=None):
                 driving_e.append(float(number.group().rstrip('%')))
             driving_e = sum(driving_e) / len(driving_e)
             driving_efficiency.append(driving_e)
-    return all_data, driving_efficiency
+    return all_data, driving_efficiency, skipped
 
 if __name__=='__main__':
     argparser = argparse.ArgumentParser(description=__doc__)
     argparser.add_argument('-f', '--file', default="uniad_b2d_traj/merged.json", help='route file')
     argparser.add_argument('-m', '--metric_dir', default="eval_bench2drive220_uniad_traj/")
     args = argparser.parse_args()
-    all_data, driving_efficiency_list = read_from_json(args.file, args.metric_dir)
+    all_data, driving_efficiency_list, skipped = read_from_json(args.file, args.metric_dir)
+    print(f'Total records: {len(all_data) + skipped}, Evaluated: {len(all_data)}, Skipped (no metric_info.json): {skipped}')
     comfort_res = []
     for record in all_data:
         comfort_res.append(seg_compute_comfort_metric(**record))
-    print(f'Driving Efficiency={sum(driving_efficiency_list) / len(driving_efficiency_list)}')
-    print(f'Driving Smoothness={sum(comfort_res)/len(comfort_res)}')
+    if driving_efficiency_list:
+        print(f'Driving Efficiency={sum(driving_efficiency_list) / len(driving_efficiency_list)}')
+    else:
+        print('Driving Efficiency=N/A (no min_speed_infractions found)')
+    if comfort_res:
+        print(f'Driving Smoothness={sum(comfort_res)/len(comfort_res)}')
+    else:
+        print('Driving Smoothness=N/A (no valid records)')

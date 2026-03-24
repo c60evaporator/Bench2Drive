@@ -188,11 +188,12 @@ class LeaderboardEvaluator(object):
             self._client_timed_out = not self.manager.get_running_status()
             self.manager.cleanup()
 
-        # Make sure no sensors are left streaming
-        alive_sensors = self.world.get_actors().filter('*sensor*')
-        for sensor in alive_sensors:
-            sensor.stop()
-            sensor.destroy()
+        # Make sure no sensors are left streaming. self.world can be None when map loading fails.
+        if self.world:
+            alive_sensors = self.world.get_actors().filter('*sensor*')
+            for sensor in alive_sensors:
+                sensor.stop()
+                sensor.destroy()
 
     def _setup_simulation(self, args):
         """

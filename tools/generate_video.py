@@ -2,6 +2,7 @@ import cv2
 import os
 import numpy as np
 import json
+import argparse
 from tqdm import trange
 
 
@@ -31,9 +32,17 @@ def create_video(images_folder, output_video, fps, font_scale, text_color, text_
         video.write(img)
     video.release()
 
-images_folder = ''
-output_video = ''
-fps = 15
+parser = argparse.ArgumentParser(description='Generate video from closed-loop evaluation results')
+parser.add_argument('-f', '--folder', required=True,
+                    help='Path to the scenario folder (parent of rgb_front/ and meta/)')
+parser.add_argument('-o', '--output', default=None,
+                    help='Output video path (default: <folder>/output.mp4)')
+parser.add_argument('--fps', type=int, default=15, help='Frames per second (default: 15)')
+args = parser.parse_args()
+
+images_folder = args.folder
+output_video = args.output if args.output else os.path.join(images_folder, 'output.mp4')
+fps = args.fps
 font_scale = 1
 text_color = (255, 255, 255)
 text_position = (50, 50)
