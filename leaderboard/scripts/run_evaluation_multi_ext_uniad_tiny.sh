@@ -78,7 +78,7 @@ for (( i=0; i<NUM_GPUS; i++ )); do
     echo -e "\033[32m   CHECKPOINT: ${CHECKPOINT_ENDPOINT} \033[0m"
     echo -e "-----------------------------------------------------------"
 
-    bash -e leaderboard/scripts/run_evaluation.sh \
+    bash leaderboard/scripts/run_evaluation.sh \
         $PORT $TM_PORT $IS_BENCH2DRIVE $ROUTES $TEAM_AGENT $TEAM_CONFIG \
         $CHECKPOINT_ENDPOINT $SAVE_PATH $PLANNER_TYPE $GPU_RANK \
         2>&1 > ${BASE_ROUTES}_${i}_${ALGO}_${PLANNER_TYPE}.log &

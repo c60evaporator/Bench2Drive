@@ -48,6 +48,9 @@ fi
 MAX_RETRIES=${MAX_RETRIES:-10}
 RETRY_WAIT=${RETRY_WAIT:-30}
 
+# Disable errexit so we can capture the exit code of the python process
+set +e
+
 for (( attempt=1; attempt<=MAX_RETRIES; attempt++ )); do
     echo "[run_evaluation.sh] Attempt ${attempt}/${MAX_RETRIES} on GPU ${GPU_RANK}, port ${PORT}"
 
