@@ -147,10 +147,13 @@ class LeaderboardEvaluator(object):
         """
         Cleanup and delete actors, ScenarioManager and CARLA world
         """
-        if hasattr(self, 'manager') and self.manager:
-            del self.manager
-        if hasattr(self, 'world') and self.world:
-            del self.world
+        try:
+            if hasattr(self, 'manager') and self.manager:
+                del self.manager
+            if hasattr(self, 'world') and self.world:
+                del self.world
+        except Exception:
+            pass
 
     def _get_running_status(self):
         """
@@ -188,12 +191,11 @@ class LeaderboardEvaluator(object):
             self._client_timed_out = not self.manager.get_running_status()
             self.manager.cleanup()
 
-        # Make sure no sensors are left streaming. self.world can be None when map loading fails.
-        if self.world:
-            alive_sensors = self.world.get_actors().filter('*sensor*')
-            for sensor in alive_sensors:
-                sensor.stop()
-                sensor.destroy()
+        # Make sure no sensors are left streaming
+        alive_sensors = self.world.get_actors().filter('*sensor*')
+        for sensor in alive_sensors:
+            sensor.stop()
+            sensor.destroy()
 
     def _setup_simulation(self, args):
         """
@@ -496,8 +498,12 @@ class LeaderboardEvaluator(object):
         if self._ros1_server is not None:
             self._ros1_server.shutdown()
 
-        # Go back to asynchronous mode
-        self._reset_world_settings()
+        # Go back to asynchronous mode (skip if CARLA crashed — world.tick() would block forever)
+        if not crashed:
+            try:
+                self._reset_world_settings()
+            except Exception:
+                print("\033[93m[WARN] _reset_world_settings() failed (CARLA may be unreachable)\033[0m", flush=True)
 
         if not crashed:
             # Save global statistics
