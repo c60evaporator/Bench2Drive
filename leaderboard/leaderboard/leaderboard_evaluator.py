@@ -437,7 +437,10 @@ class LeaderboardEvaluator(object):
         
         except Exception:
             print("\n\033[91mError during the simulation:", flush=True)
-            print(f"\n{traceback.format_exc()}\033[0m", flush=True)
+            try:
+                print(f"\n{traceback.format_exc()}\033[0m", flush=True)
+            except Exception:
+                print("(traceback unavailable — interrupted by signal)\033[0m", flush=True)
 
             entry_status, crash_message = FAILURE_MESSAGES["Simulation"]
 
@@ -485,11 +488,25 @@ class LeaderboardEvaluator(object):
 
             # Run the scenario
             config = route_indexer.get_next_config()
-            crashed = self._load_and_run_scenario(args, config)
+            try:
+                crashed = self._load_and_run_scenario(args, config)
+            except Exception:
+                # If _load_and_run_scenario itself raises (e.g. signal handler
+                # interrupted an except block), treat it as a crash so we don't
+                # try to call _reset_world_settings on a dead CARLA connection.
+                print("\n\033[91m_load_and_run_scenario raised an unhandled exception:\033[0m", flush=True)
+                try:
+                    print(traceback.format_exc(), flush=True)
+                except Exception:
+                    pass
+                crashed = True
             print(crashed, flush=True)
             # Save the progress and write the route statistics
-            self.statistics_manager.save_progress(route_indexer.index, route_indexer.total)
-            self.statistics_manager.write_statistics()
+            try:
+                self.statistics_manager.save_progress(route_indexer.index, route_indexer.total)
+                self.statistics_manager.write_statistics()
+            except Exception:
+                pass
             if crashed:
                 print(f'{route_indexer.index} crash, [{route_indexer.index}/{route_indexer.total}], please restart', flush=True)
                 break
