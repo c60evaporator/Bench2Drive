@@ -86,17 +86,23 @@ for (( attempt=1; attempt<=MAX_RETRIES; attempt++ )); do
     # If using external CARLA, wait for the server to be restarted manually or by a watchdog.
     # If CARLA is managed internally, it will be relaunched by leaderboard_evaluator.py itself.
     if [ -n "${EXTERNAL_CARLA_FLAG}" ]; then
-        echo "[run_evaluation.sh] GPU ${GPU_RANK}: Waiting for external CARLA on port ${PORT} to come back..."
-        for (( w=0; w<120; w++ )); do
+        CARLA_WAIT_TIMEOUT=${CARLA_WAIT_TIMEOUT:-1800}
+        CARLA_WAIT_INTERVAL=5
+        CARLA_WAIT_LOOPS=$(( CARLA_WAIT_TIMEOUT / CARLA_WAIT_INTERVAL ))
+        echo "[run_evaluation.sh] GPU ${GPU_RANK}: Waiting for external CARLA on port ${PORT} (up to ${CARLA_WAIT_TIMEOUT}s)..."
+        carla_back=false
+        for (( w=0; w<CARLA_WAIT_LOOPS; w++ )); do
             if timeout 2 bash -c "echo > /dev/tcp/localhost/${PORT}" 2>/dev/null; then
                 echo "[run_evaluation.sh] GPU ${GPU_RANK}: CARLA on port ${PORT} is back."
+                carla_back=true
                 break
             fi
-            sleep 5
+            sleep ${CARLA_WAIT_INTERVAL}
         done
-        if ! timeout 2 bash -c "echo > /dev/tcp/localhost/${PORT}" 2>/dev/null; then
-            echo "[run_evaluation.sh] GPU ${GPU_RANK}: CARLA on port ${PORT} not reachable after 600s. Giving up."
-            exit 1
+        if [ "${carla_back}" = false ]; then
+            echo "[run_evaluation.sh] GPU ${GPU_RANK}: CARLA on port ${PORT} not reachable after ${CARLA_WAIT_TIMEOUT}s."
+            # Don't exit — let the retry loop try again (CARLA watchdog may restart it later)
+            continue
         fi
     fi
 
